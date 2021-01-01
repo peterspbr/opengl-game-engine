@@ -228,14 +228,6 @@ int main()
 
         glUseProgram(shader);
 
-        float rotation;
-        rotation++;
-
-        if(rotation < 360)
-        {
-            rotation -= 360;
-        }
-
         cout << "X: " << cameraPosition_X << " Z: " << cameraPosition_Z << endl;
 
         glm::mat4 model(1.0f);
@@ -245,7 +237,6 @@ int main()
         persp = glm::perspective(glm::radians(60.0f), float(windowWidth) / float(windowHeight), 0.01f, 3000.0f);
 
         model = glm::translate(model, glm::vec3(cameraPosition_X, 0.0f, cameraPosition_Z));
-        model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 1.0f));
 		model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
 
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
