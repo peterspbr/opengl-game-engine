@@ -13,8 +13,12 @@
 
 using namespace std;
 
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod);
+
 GLuint VAO, VBO, shader;
 GLuint uniformModel, camera, projection;
+
+int cameraPosition_X, cameraPosition_Z;
 
 const char* vShader = "                                                     \n\
 #version 330 core                                                           \n\
@@ -198,6 +202,7 @@ int main()
     glfwMakeContextCurrent(window);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     glewExperimental = GLFW_TRUE;
 
@@ -217,6 +222,8 @@ int main()
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+        glfwSetKeyCallback(window, key_callback);
+
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -230,11 +237,15 @@ int main()
             rotation -= 360;
         }
 
+        cout << "X: " << cameraPosition_X << " Z: " << cameraPosition_Z << endl;
+
         glm::mat4 model(1.0f);
         glm::mat4 view(1.0);
         glm::mat4 persp(1.0f);
 
         persp = glm::perspective(glm::radians(60.0f), float(windowWidth) / float(windowHeight), 0.01f, 3000.0f);
+
+        model = glm::translate(model, glm::vec3(cameraPosition_X, 0.0f, cameraPosition_Z));
         model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 1.0f));
 		model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
 
@@ -244,7 +255,7 @@ int main()
 
         glBindVertexArray(VAO);
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Enable wireframe mode view.
         glDrawArrays(GL_TRIANGLES, 0, 36);
         
         glBindVertexArray(0);
@@ -254,4 +265,26 @@ int main()
     }
 
     return 0;
+}
+
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod)
+{
+    if(action == GLFW_PRESS || action == GLFW_REPEAT)
+    {
+        switch (key)
+        {
+            case GLFW_KEY_W:
+                cameraPosition_Z += 1.0f;
+                break;
+            case GLFW_KEY_A:
+                cameraPosition_X += 1.0f;
+                break;
+            case GLFW_KEY_S:
+                cameraPosition_Z -= 1.0f;
+                break;
+            case GLFW_KEY_D:
+                cameraPosition_X -= 1.0f;
+                break;
+        }
+    }
 }
