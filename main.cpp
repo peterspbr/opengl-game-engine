@@ -14,11 +14,17 @@
 using namespace std;
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod);
+void mouse_callback(GLFWwindow *window, double xpos, double zpos);
 
 GLuint VAO, VBO, shader;
 GLuint uniformModel, camera, projection;
 
-int cameraPosition_X = 0, cameraPosition_Z = -5;
+int cameraPosition_X = 0, cameraPosition_Y = 0, cameraPosition_Z = -5;
+
+float cameraRotation_X, cameraRotation_Y;
+float mouseSensibility_X = 0.1f, mouseSensibility_Y = 0.1f;
+
+bool cursorLocked = true;
 
 const char* vShader = "                                                     \n\
 #version 330 core                                                           \n\
@@ -222,13 +228,22 @@ int main()
     {
         glfwPollEvents();
         glfwSetKeyCallback(window, key_callback);
+        glfwSetCursorPosCallback(window, mouse_callback);
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shader);
 
-        cout << "X: " << cameraPosition_X << " Z: " << cameraPosition_Z << endl;
+        cout << "Current camera position: " << "X: " << cameraPosition_X << " Y: " << cameraPosition_Y << " Z: " << cameraPosition_Z << endl;
+
+        if(cursorLocked)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
 
         glm::mat4 model(1.0f);
         glm::mat4 view(1.0);
@@ -236,7 +251,10 @@ int main()
 
         persp = glm::perspective(glm::radians(60.0f), float(windowWidth) / float(windowHeight), 0.01f, 3000.0f);
 
-        model = glm::translate(model, glm::vec3(cameraPosition_X, 0.0f, cameraPosition_Z));
+        view = glm::rotate(view, glm::radians(cameraRotation_X), glm::vec3(1.0f, 0.0f, 0.0f));
+        view = glm::rotate(view, glm::radians(cameraRotation_Y), glm::vec3(0.0f, 1.0f, 0.0f));
+        view = glm::translate(view, glm::vec3(cameraPosition_X, cameraPosition_Y, cameraPosition_Z));
+
 		model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
 
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
@@ -275,6 +293,21 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             case GLFW_KEY_D:
                 cameraPosition_X -= 1.0f;
                 break;
+            case GLFW_KEY_Q:
+                cameraPosition_Y += 1.0f;
+                break;
+            case GLFW_KEY_E:
+                cameraPosition_Y -= 1.0f;
+                break;
+            case GLFW_KEY_ESCAPE:
+                cursorLocked = false;
+                break;
         }
     }
+}
+
+void mouse_callback(GLFWwindow *window, double xpos, double zpos)
+{
+    cameraRotation_Y = xpos * mouseSensibility_Y;
+    cameraRotation_X = zpos * mouseSensibility_X;
 }
