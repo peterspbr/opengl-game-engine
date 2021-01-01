@@ -18,7 +18,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 GLuint VAO, VBO, shader;
 GLuint uniformModel, camera, projection;
 
-int cameraPosition_X, cameraPosition_Z;
+int cameraPosition_X = 0, cameraPosition_Z = -5;
 
 const char* vShader = "                                                     \n\
 #version 330 core                                                           \n\
@@ -202,7 +202,6 @@ int main()
     glfwMakeContextCurrent(window);
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
 
     glewExperimental = GLFW_TRUE;
 
