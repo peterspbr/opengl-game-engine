@@ -22,7 +22,7 @@ using namespace std;
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod);
 void mouse_callback(GLFWwindow *window, double xpos, double zpos);
 
-GLuint VAO, VBO, shader;
+GLuint VAO, VBO, shader, texture;
 GLuint uniformModel, camera, projection;
 
 const int xSize = 20, zSize = 20;
@@ -37,6 +37,9 @@ const char* vShader = "                                                     \n\
 #version 330 core                                                           \n\
                                                                             \n\
 layout (location = 0) in vec3 pos;                                          \n\
+layout (location = 1) in vec3 mTexCord;                                     \n\
+                                                                            \n\
+out vec2 TexCord;                                                           \n\
                                                                             \n\
 uniform mat4 model;                                                         \n\
 uniform mat4 view;                                                          \n\
@@ -44,6 +47,7 @@ uniform mat4 perspective;                                                   \n\
                                                                             \n\
 void main() {                                                               \n\
     gl_Position = perspective * view * model * vec4(pos, 1.0);              \n\
+    TexCord = vec2(mTexCord.x, mTexCord.y);                                 \n\
 }";
 
 const char* fShader = "                                                     \n\
@@ -51,8 +55,12 @@ const char* fShader = "                                                     \n\
                                                                             \n\
 out vec4 color;                                                             \n\
                                                                             \n\
+in vec2 TexCord;                                                            \n\
+                                                                            \n\
+uniform sampler2D textmod1;                                                  \n\
+                                                                            \n\
 void main(){                                                                \n\
-    color = vec4(1.0f, 1.0f, 1.0f);                                         \n\
+    color = texture(textmod1, TexCord);                                      \n\
 }";
 
 void createTriangle()
@@ -108,8 +116,35 @@ void createTriangle()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // texture 1
+    // ---------
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image, create texture and generate mipmaps
+    int width, height, nrChannels;
+    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
+    unsigned char *data = stbi_load("resources/textures/pine.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
@@ -184,6 +219,7 @@ void compileShaders()
     uniformModel =   glGetUniformLocation(shader, "model");
     camera       =   glGetUniformLocation(shader, "view");
     projection   =   glGetUniformLocation(shader, "perspective");
+    texture      =   glGetUniformLocation(shader, "textmod1");
 }
 
 int main()
@@ -239,6 +275,9 @@ int main()
 
         glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
 
         glUseProgram(shader);
 
