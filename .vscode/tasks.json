@@ -13,7 +13,8 @@
 				"-lGL",
 				"-lglfw",
 				"-lGLEW",
-				"-lGLU"
+				"-lGLU",
+				"-lfreetype"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}"

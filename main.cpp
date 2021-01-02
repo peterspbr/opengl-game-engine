@@ -11,6 +11,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 using namespace std;
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod);
