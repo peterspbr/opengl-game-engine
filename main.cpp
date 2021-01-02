@@ -248,7 +248,6 @@ int main()
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
 
-        glm::mat4 model(1.0f);
         glm::mat4 view(1.0);
         glm::mat4 persp(1.0f);
 
@@ -258,16 +257,23 @@ int main()
         view = glm::rotate(view, glm::radians(cameraRotation_Y), glm::vec3(0.0f, 1.0f, 0.0f));
         view = glm::translate(view, glm::vec3(cameraPosition_X, cameraPosition_Y, cameraPosition_Z));
 
-		model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+		//model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
 
-		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(camera, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projection, 1, GL_FALSE, glm::value_ptr(persp));
 
-        glBindVertexArray(VAO);
-
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Enable wireframe mode view.
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for(int j = 0; j < 10; j++)
+        {
+            for(int i = 0; i < 10; i++)
+            {
+                glm::mat4 model(1.0f);
+                model = glm::translate(model, glm::vec3(i * 2, 0.0f, j * 2));
+                glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+                glBindVertexArray(VAO);
+                //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Enable wireframe mode view.
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+        }
         
         glBindVertexArray(0);
         glUseProgram(0);
