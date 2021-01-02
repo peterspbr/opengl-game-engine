@@ -14,6 +14,9 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "include/stb_image.h"
+
 using namespace std;
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod);
@@ -22,7 +25,8 @@ void mouse_callback(GLFWwindow *window, double xpos, double zpos);
 GLuint VAO, VBO, shader;
 GLuint uniformModel, camera, projection;
 
-int cameraPosition_X = 0, cameraPosition_Y = 0, cameraPosition_Z = -5;
+const int xSize = 20, zSize = 20;
+int cameraPosition_X = -10, cameraPosition_Y = -2, cameraPosition_Z = -10;
 
 float cameraRotation_X, cameraRotation_Y;
 float mouseSensibility_X = 0.1f, mouseSensibility_Y = 0.1f;
@@ -196,7 +200,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, "Hello, triangle", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, "Not another Minecraft clone", NULL, NULL);
 
     if(!window)
     {
@@ -233,7 +237,7 @@ int main()
         glfwSetKeyCallback(window, key_callback);
         glfwSetCursorPosCallback(window, mouse_callback);
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shader);
@@ -257,17 +261,15 @@ int main()
         view = glm::rotate(view, glm::radians(cameraRotation_Y), glm::vec3(0.0f, 1.0f, 0.0f));
         view = glm::translate(view, glm::vec3(cameraPosition_X, cameraPosition_Y, cameraPosition_Z));
 
-		//model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
-
         glUniformMatrix4fv(camera, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projection, 1, GL_FALSE, glm::value_ptr(persp));
 
-        for(int j = 0; j < 10; j++)
+        for(int z = 0; z < zSize; z++)
         {
-            for(int i = 0; i < 10; i++)
+            for(int x = 0; x < xSize; x++)
             {
                 glm::mat4 model(1.0f);
-                model = glm::translate(model, glm::vec3(i * 2, 0.0f, j * 2));
+                model = glm::translate(model, glm::vec3(x * 2, 0.0f, z * 2));
                 glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
                 glBindVertexArray(VAO);
                 //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Enable wireframe mode view.
