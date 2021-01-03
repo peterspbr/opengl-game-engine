@@ -21,13 +21,19 @@ using namespace std;
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod);
 void mouse_callback(GLFWwindow *window, double xpos, double zpos);
+void setupGravity(float mass, float gravityForce, float gravityAccel, bool isEnabled);
 
 GLuint VAO, VBO, shader, texture;
 GLuint uniformModel, camera, projection;
 
-const int xSize = 20, zSize = 20;
-int cameraPosition_X = -10, cameraPosition_Y = -2, cameraPosition_Z = -10;
+const int xChunkSize = 20, zChunkSize = 20;
 
+int cameraPosition_X = -10, cameraPosition_Y = -2, cameraPosition_Z = -10;
+int collisionPointForward = cameraPosition_Z * 2;
+int collisionPointDownward = -cameraPosition_Y * 2;
+int frames;
+
+double lastTime = 0.0;
 float cameraRotation_X, cameraRotation_Y;
 float mouseSensibility_X = 0.1f, mouseSensibility_Y = 0.1f;
 
@@ -57,13 +63,13 @@ out vec4 color;                                                             \n\
                                                                             \n\
 in vec2 TexCord;                                                            \n\
                                                                             \n\
-uniform sampler2D textmod1;                                                  \n\
+uniform sampler2D textmod1;                                                 \n\
                                                                             \n\
 void main(){                                                                \n\
-    color = texture(textmod1, TexCord);                                      \n\
+    color = texture(textmod1, TexCord);                                     \n\
 }";
 
-void createTriangle()
+void createCube()
 {
     GLfloat vertices[] = {
         -1.0f, -1.0f, -1.0f,  0.0f, 0.0f,
@@ -128,13 +134,13 @@ void createTriangle()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    unsigned char *data = stbi_load("resources/textures/pine.jpg", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("resources/textures/dirt.jpeg", &width, &height, &nrChannels, 0);
 
     if (data)
     {
@@ -266,7 +272,7 @@ int main()
 
     glViewport(0, 0, widthBuffer, heightBuffer);
 
-    createTriangle();
+    createCube();
     compileShaders();
 
     while(!glfwWindowShouldClose(window))
@@ -274,6 +280,21 @@ int main()
         glfwPollEvents();
         glfwSetKeyCallback(window, key_callback);
         glfwSetCursorPosCallback(window, mouse_callback);
+
+        double time = glfwGetTime();
+        double delta = time - lastTime;
+        frames++;
+
+        if(delta >= 1.0)
+        {
+            double fps = double(frames) / delta;
+            cout << "Fps: " << fps << endl;
+            
+            frames = 0;
+            lastTime = time;
+        }
+
+        setupGravity(1.0f, 0, 9.81f, true);
 
         glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -283,7 +304,7 @@ int main()
 
         glUseProgram(shader);
 
-        cout << "Current camera position: " << "X: " << cameraPosition_X << " Y: " << cameraPosition_Y << " Z: " << cameraPosition_Z << endl;
+        //cout << "Current camera position: " << "X: " << cameraPosition_X << " Y: " << cameraPosition_Y << " Z: " << cameraPosition_Z << endl;
 
         if(cursorLocked)
         {
@@ -305,16 +326,16 @@ int main()
         glUniformMatrix4fv(camera, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projection, 1, GL_FALSE, glm::value_ptr(persp));
 
-        for(int z = 0; z < zSize; z++)
+        for(int z = 0; z < zChunkSize; z++)
         {
-            for(int x = 0; x < xSize; x++)
+            for(int x = 0; x < xChunkSize; x++)
             {
                 glm::mat4 model(1.0f);
                 model = glm::translate(model, glm::vec3(x * 2, 0.0f, z * 2));
                 glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
                 glBindVertexArray(VAO);
                 //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Enable wireframe mode view.
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                glDrawArraysInstanced(GL_TRIANGLES, 0, GL_UNSIGNED_INT, 1);
             }
         }
         
@@ -322,6 +343,7 @@ int main()
         glUseProgram(0);
 
         glfwSwapBuffers(window);
+        glfwSwapInterval(1);
     }
 
     return 0;
@@ -345,12 +367,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             case GLFW_KEY_D:
                 cameraPosition_X -= 1.0f;
                 break;
-            case GLFW_KEY_Q:
-                cameraPosition_Y += 1.0f;
-                break;
-            case GLFW_KEY_E:
-                cameraPosition_Y -= 1.0f;
-                break;
             case GLFW_KEY_ESCAPE:
                 cursorLocked = false;
                 break;
@@ -362,4 +378,14 @@ void mouse_callback(GLFWwindow *window, double xpos, double zpos)
 {
     cameraRotation_Y = xpos * mouseSensibility_Y;
     cameraRotation_X = zpos * mouseSensibility_X;
+}
+
+void setupGravity(float mass, float gravityForce, float gravityAccel, bool isEnabled)
+{
+    gravityForce = mass * gravityAccel;
+    
+    if(isEnabled)
+    {
+        cameraPosition_Y += gravityForce;
+    }
 }
