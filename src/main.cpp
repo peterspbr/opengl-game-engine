@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string.h>
+#include <vector>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -11,20 +12,19 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "include/stb_image.h"
+#include "../include/Mesh.h"
+#include "../include/Tex.h"
+#include "../include/Shader.h"
 
 using namespace std;
+
+vector<Mesh*> meshList;
+vector<Tex*> texList;
+vector<Shader*> shaderList;
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod);
 void mouse_callback(GLFWwindow *window, double xpos, double zpos);
 void setupGravity(float mass, float gravityForce, float gravityAccel, bool isEnabled);
-
-GLuint VAO, VBO, shader, texture;
-GLuint uniformModel, camera, projection;
 
 const int xChunkSize = 20, zChunkSize = 20;
 
@@ -115,119 +115,20 @@ void createCube()
         -1.0f,  1.0f, -1.0f,  0.0f, 1.0f
     };
 
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    Mesh *obj1 = new Mesh();
+	obj1->createMesh(vertices, sizeof(vertices));
+	meshList.push_back(obj1);
 
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    // load image, create texture and generate mipmaps
-    int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    unsigned char *data = stbi_load("resources/textures/dirt.jpeg", &width, &height, &nrChannels, 0);
-
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-
-    stbi_image_free(data);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    Tex *tex1 = new Tex();
+    tex1->createTexture();
+    texList.push_back(tex1);
 }
 
-void addShader(GLuint ID, const char* shaderCode, GLenum shaderType)
+void createShader()
 {
-    GLuint theShader = glCreateShader(shaderType);
-
-    const GLchar* theCode[1];
-    theCode[0] = shaderCode;
-
-    GLint codeLenght[1];
-    codeLenght[0] = strlen(shaderCode);
-
-    glShaderSource(theShader, 1, theCode, codeLenght);
-    glCompileShader(theShader);
-
-    GLint result = 0;
-    GLchar eLog[1024] = {0};
-
-    glGetShaderiv(theShader, GL_COMPILE_STATUS, &result);
-
-    if(!result)
-    {
-        glGetShaderInfoLog(theShader, 1024, NULL, eLog);
-        cout << "Cannot compile the shader: " << eLog << endl;
-        return;
-    }
-
-    glAttachShader(ID, theShader);
-}
-
-void compileShaders()
-{
-	shader = glCreateProgram(); // Creates the shader program.
-
-	// Check for any errors.
-	if(!shader)
-	{
-		cout << "Failed to create shader" << endl;
-		return;
-	}
-	
-	// Add the shader to VAO and VBO.
-	addShader(shader, vShader, GL_VERTEX_SHADER);
-	addShader(shader, fShader, GL_FRAGMENT_SHADER);
-
-    // Check for errors.
-	GLint result = 0;
-	GLchar eLog[1024] = {0};
-
-	glLinkProgram(shader);
-	glGetProgramiv(shader, GL_LINK_STATUS, &result);
-
-	if(!result)
-	{
-		glGetProgramInfoLog(shader, sizeof(eLog), NULL, eLog);
-		cout << "Failed to link program: " << eLog << endl;
-		return;
-	}
-
-	// Validate the shader program and check for any errors.
-	glValidateProgram(shader);
-	glGetProgramiv(shader, GL_VALIDATE_STATUS, &result);
-
-	if(!result)
-	{
-		glGetProgramInfoLog(shader, sizeof(eLog), NULL, eLog);
-		cout << "Failed to validate program: " << eLog << endl;
-	}
-
-    uniformModel =   glGetUniformLocation(shader, "model");
-    camera       =   glGetUniformLocation(shader, "view");
-    projection   =   glGetUniformLocation(shader, "perspective");
-    texture      =   glGetUniformLocation(shader, "textmod1");
+    Shader *shader1 = new Shader();
+    shader1->getFromString(vShader, fShader);
+    shaderList.push_back(shader1);
 }
 
 int main()
@@ -273,7 +174,9 @@ int main()
     glViewport(0, 0, widthBuffer, heightBuffer);
 
     createCube();
-    compileShaders();
+    createShader();
+
+    GLuint uniformModel, uniformProjection, uniformCamera, uniformTexture;
 
     while(!glfwWindowShouldClose(window))
     {
@@ -294,15 +197,18 @@ int main()
             lastTime = time;
         }
 
-        setupGravity(1.0f, 0, 9.81f, true);
+        setupGravity(1.0f, 0, 9.81f, false);
 
         glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        texList[0]->renderTexture();
 
-        glUseProgram(shader);
+        shaderList[0]->useShader();
+        uniformModel = shaderList[0]->getModelLocation();
+        uniformProjection = shaderList[0]->getProjectionLocation();
+        uniformCamera = shaderList[0]->getViewLocation();
+        uniformTexture = shaderList[0]->getTexLocation();
 
         //cout << "Current camera position: " << "X: " << cameraPosition_X << " Y: " << cameraPosition_Y << " Z: " << cameraPosition_Z << endl;
 
@@ -323,8 +229,8 @@ int main()
         view = glm::rotate(view, glm::radians(cameraRotation_Y), glm::vec3(0.0f, 1.0f, 0.0f));
         view = glm::translate(view, glm::vec3(cameraPosition_X, cameraPosition_Y, cameraPosition_Z));
 
-        glUniformMatrix4fv(camera, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projection, 1, GL_FALSE, glm::value_ptr(persp));
+        glUniformMatrix4fv(uniformCamera, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(persp));
 
         for(int z = 0; z < zChunkSize; z++)
         {
@@ -333,9 +239,7 @@ int main()
                 glm::mat4 model(1.0f);
                 model = glm::translate(model, glm::vec3(x * 2, 0.0f, z * 2));
                 glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-                glBindVertexArray(VAO);
-                //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Enable wireframe mode view.
-                glDrawArraysInstanced(GL_TRIANGLES, 0, GL_UNSIGNED_INT, 1);
+                meshList[0]->renderMesh();
             }
         }
         
