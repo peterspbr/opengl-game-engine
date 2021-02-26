@@ -1,6 +1,3 @@
-#define windowWidth 800
-#define windowHeight 600
-
 #include <iostream>
 #include <string.h>
 #include <vector>
@@ -15,6 +12,9 @@
 #include "../include/Mesh.h"
 #include "../include/Tex.h"
 #include "../include/Shader.h"
+
+#define windowWidth 800
+#define windowHeight 600
 
 using namespace std;
 
