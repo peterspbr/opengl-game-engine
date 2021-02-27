@@ -13,9 +13,6 @@
 #include "../include/Tex.h"
 #include "../include/Shader.h"
 
-#define windowWidth 800
-#define windowHeight 600
-
 using namespace std;
 
 vector<Mesh*> meshList;
