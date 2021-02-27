@@ -13,7 +13,6 @@
 				"-lGL",
 				"-lglfw",
 				"-lGLEW",
-				"-lGLU",
 				"-lfreetype"
 			],
 			"options": {

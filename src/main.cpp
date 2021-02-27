@@ -1,6 +1,3 @@
-#define windowWidth 800
-#define windowHeight 600
-
 #include <iostream>
 #include <string.h>
 #include <vector>
@@ -22,15 +19,22 @@ vector<Mesh*> meshList;
 vector<Tex*> texList;
 vector<Shader*> shaderList;
 
+typedef struct
+{
+    int w, a, s, d;
+} buttonKeys; buttonKeys keys;
+
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void setupGravity(float mass, float gravityForce, float gravityAccel, bool isEnabled);
 
 GLuint uniformModel, uniformProjection, uniformCamera, uniformTexture;
 
+const int windowWidth = 800, windowHeight = 600;
+
 const int xChunkSize = 10, zChunkSize = 10;
 
-int cameraPosition_X = -10, cameraPosition_Y = -2, cameraPosition_Z = -10; // Initial camera position
+float cameraPosition_X = -10, cameraPosition_Y = -2, cameraPosition_Z = -10; // Initial camera position
 // Collision
 int collisionPointForward = cameraPosition_Z * 2;
 int collisionPointDownward = -cameraPosition_Y * 2;
@@ -199,6 +203,11 @@ int main()
         glfwSetKeyCallback(window, key_callback);
         glfwSetCursorPosCallback(window, mouse_callback);
 
+        if(keys.w == 1){cameraPosition_Z += 0.4;}
+        if(keys.a == 1){cameraPosition_X += 0.4;}
+        if(keys.s == 1){cameraPosition_Z -= 0.4;}
+        if(keys.d == 1){cameraPosition_X -= 0.4;}
+
         double time = glfwGetTime();
         double delta = time - lastTime;
         frames++;
@@ -225,16 +234,6 @@ int main()
 
         texList[0]->renderTexture();
 
-        //cout << "Current camera position: " << "X: " << cameraPosition_X << " Y: " << cameraPosition_Y << " Z: " << cameraPosition_Z << endl;
-
-        if(cursorLocked)
-        {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-        else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-
         glm::mat4 view(1.0f);
         glm::mat4 persp(1.0f);
 
@@ -246,6 +245,14 @@ int main()
 
         glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(persp));
         glUniformMatrix4fv(uniformCamera, 1, GL_FALSE, glm::value_ptr(view));
+
+        if(cursorLocked)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
 
         generateTerrain();
 
@@ -263,19 +270,38 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         switch (key)
         {
             case GLFW_KEY_W:
-                cameraPosition_Z += 1.0f;
+                keys.w = 1;
                 break;
             case GLFW_KEY_A:
-                cameraPosition_X += 1.0f;
+                keys.a = 1;
                 break;
             case GLFW_KEY_S:
-                cameraPosition_Z -= 1.0f;
+                keys.s = 1;
                 break;
             case GLFW_KEY_D:
-                cameraPosition_X -= 1.0f;
+                keys.d = 1;
                 break;
             case GLFW_KEY_ESCAPE:
                 cursorLocked = false;
+                break;
+        }
+    }
+
+    else if(action == GLFW_RELEASE || action == GLFW_REPEAT)
+    {
+        switch (key)
+        {
+            case GLFW_KEY_W:
+                keys.w = 0;
+                break;
+            case GLFW_KEY_A:
+                keys.a = 0;
+                break;
+            case GLFW_KEY_S:
+                keys.s = 0;
+                break;
+            case GLFW_KEY_D:
+                keys.d = 0;
                 break;
         }
     }
@@ -283,8 +309,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 {
-    cameraRotation_Y = xpos * mouseSensibility_X;
-    cameraRotation_X = ypos * mouseSensibility_Y;
+    cameraRotation_Y = xpos * mouseSensibility_Y;
+    cameraRotation_X = ypos * mouseSensibility_X;
 }
 
 void setupGravity(float mass, float gravityForce, float gravityAccel, bool isEnabled)
