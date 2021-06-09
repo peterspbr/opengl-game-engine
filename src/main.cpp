@@ -1,51 +1,61 @@
+/*
+*   Coded by: Peter S - https://github.com/peterspbr
+*   This source code is distributed under the MIT license. Please take a look at the LICENSE.MD file.
+*/
+
+// Standard libraries
 #include <iostream>
 #include <string.h>
 #include <vector>
 
+// GL libraries
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+// GLM libraries
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// Header files
 #include "../include/Mesh.h"
 #include "../include/Tex.h"
 #include "../include/Shader.h"
 
 using namespace std;
 
+// Vectors
 vector<Mesh*> meshList;
 vector<Tex*> texList;
 vector<Shader*> shaderList;
 
 typedef struct
 {
-    int w, a, s, d;
+    int w, a, s, d, q, e;
 } buttonKeys; buttonKeys keys;
 
+// Function callbacks
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void setupGravity(float mass, float gravityForce, float gravityAccel, bool isEnabled);
 
+// Integer variables
 GLuint uniformModel, uniformProjection, uniformCamera, uniformTexture;
-
 const int windowWidth = 800, windowHeight = 600;
-
 const int xChunkSize = 10, zChunkSize = 10;
-
-float cameraPosition_X = -10, cameraPosition_Y = -2, cameraPosition_Z = -10; // Initial camera position
-// Collision
-int collisionPointForward = cameraPosition_Z * 2;
-int collisionPointDownward = -cameraPosition_Y * 2;
 int frames;
 
+// Double precision variables
 double lastTime = 0.0;
+float cameraPosition_X = -10, cameraPosition_Y = -2, cameraPosition_Z = -10; // Initial camera position
 float cameraRotation_X, cameraRotation_Y;
 float mouseSensibility_X = 0.1f, mouseSensibility_Y = 0.1f;
 
+// Boolean variables
 bool cursorLocked = true;
 
+// Shaders
+// Vertex Shader
 const char* vShader = "                                                     \n\
 #version 330 core                                                           \n\
                                                                             \n\
@@ -63,6 +73,7 @@ void main() {                                                               \n\
     TexCord = vec2(mTexCord.x, mTexCord.y);                                 \n\
 }";
 
+// Fragment shader
 const char* fShader = "                                                     \n\
 #version 330 core                                                           \n\
                                                                             \n\
@@ -76,6 +87,7 @@ void main(){                                                                \n\
     color = texture(textmod1, TexCord);                                     \n\
 }";
 
+// Create object
 void createCube()
 {
     GLfloat vertices[] = {
@@ -131,6 +143,7 @@ void createCube()
     texList.push_back(tex1);
 }
 
+// Create the shader
 void createShader()
 {
     Shader *shader1 = new Shader();
@@ -138,6 +151,7 @@ void createShader()
     shaderList.push_back(shader1);
 }
 
+// Generate the terrain
 void generateTerrain()
 {
     for(int z = 0; z < zChunkSize; z++)
@@ -152,8 +166,10 @@ void generateTerrain()
         }
 }
 
+// Main function
 int main()
 {
+    // Initialization process
     if(!glfwInit())
     {
         cout << "Cannot initiate GLFW! Exiting..." << endl;
@@ -184,7 +200,8 @@ int main()
 
     glewExperimental = GLFW_TRUE;
 
-    if(glewInit() != GLEW_OK)
+    GLenum error = glewInit();
+    if(error != GLEW_OK)
     {
         cout << "Cannot initiate GLEW! Exiting..." << endl;
         glfwDestroyWindow(window);
@@ -194,20 +211,25 @@ int main()
 
     glViewport(0, 0, widthBuffer, heightBuffer);
 
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+
     createCube();
     createShader();
 
+    // Game loop
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        glfwSetKeyCallback(window, key_callback);
-        glfwSetCursorPosCallback(window, mouse_callback);
 
         if(keys.w == 1){cameraPosition_Z += 0.4;}
         if(keys.a == 1){cameraPosition_X += 0.4;}
         if(keys.s == 1){cameraPosition_Z -= 0.4;}
         if(keys.d == 1){cameraPosition_X -= 0.4;}
+        if(keys.q == 1){cameraPosition_Y += 0.4;}
+        if(keys.e == 1){cameraPosition_Y -= 0.4;}
 
+        // Get framerate values
         double time = glfwGetTime();
         double delta = time - lastTime;
         frames++;
@@ -233,7 +255,7 @@ int main()
         uniformTexture = shaderList[0]->getTexLocation();
 
         texList[0]->renderTexture();
-
+        
         glm::mat4 view(1.0f);
         glm::mat4 persp(1.0f);
 
@@ -263,6 +285,7 @@ int main()
     return 0;
 }
 
+// Handle keys
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod)
 {
     if(action == GLFW_PRESS || action == GLFW_REPEAT)
@@ -280,6 +303,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
                 break;
             case GLFW_KEY_D:
                 keys.d = 1;
+                break;
+            case GLFW_KEY_Q:
+                keys.q = 1;
+                break;
+            case GLFW_KEY_E:
+                keys.e = 1;
                 break;
             case GLFW_KEY_ESCAPE:
                 cursorLocked = false;
@@ -303,16 +332,24 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             case GLFW_KEY_D:
                 keys.d = 0;
                 break;
+            case GLFW_KEY_Q:
+                keys.q = 0;
+                break;
+            case GLFW_KEY_E:
+                keys.e = 0;
+                break;
         }
     }
 }
 
+// Handle mouse input
 void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 {
     cameraRotation_Y = xpos * mouseSensibility_Y;
     cameraRotation_X = ypos * mouseSensibility_X;
 }
 
+// Setup gravity
 void setupGravity(float mass, float gravityForce, float gravityAccel, bool isEnabled)
 {
     gravityForce = mass * gravityAccel;

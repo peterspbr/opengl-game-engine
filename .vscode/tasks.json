@@ -6,13 +6,12 @@
 			"label": "C/C++: g++ build active file",
 			"command": "/usr/bin/g++",
 			"args": [
-				"-g",
-				"${workspaceFolder}/src/main.cpp",
 				"-o",
-				"${workspaceFolder}/notMine",
+				"${workspaceFolder}/bin/notMine",
+				"${workspaceFolder}/src/main.cpp",
 				"-lGL",
-				"-lglfw",
 				"-lGLEW",
+				"-lglfw",
 				"-lfreetype"
 			],
 			"options": {

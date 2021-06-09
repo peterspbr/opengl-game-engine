@@ -8,7 +8,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/notMine",
+            "program": "${workspaceFolder}/bin/notMine",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
